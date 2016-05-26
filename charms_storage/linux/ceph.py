@@ -284,7 +284,7 @@ def get_mon_map(service):
     try:
         mon_status = check_output(
             ['ceph', '--id', service,
-             'mon_status', '--format=json'])
+             'mon_status', '--format=json']).decode("utf-8") 
         try:
             return json.loads(mon_status)
         except ValueError as v:
@@ -411,7 +411,7 @@ def get_erasure_profile(service, name):
     try:
         out = check_output(['ceph', '--id', service,
                             'osd', 'erasure-code-profile', 'get',
-                            name, '--format=json'])
+                            name, '--format=json']).decode("utf-8") 
         return json.loads(out)
     except (CalledProcessError, OSError, ValueError):
         return None
@@ -598,7 +598,8 @@ def get_cache_mode(service, pool_name):
     """
     validator(value=service, valid_type=six.string_types)
     validator(value=pool_name, valid_type=six.string_types)
-    out = check_output(['ceph', '--id', service, 'osd', 'dump', '--format=json'])
+    out = check_output(['ceph', '--id', service, 'osd', 'dump', '--format=json']) \
+              .decode("utf-8")
     try:
         osd_json = json.loads(out)
         for pool in osd_json['pools']:
@@ -613,7 +614,7 @@ def pool_exists(service, name):
     """Check to see if a RADOS pool already exists."""
     try:
         out = check_output(['rados', '--id', service,
-                            'lspools']).decode('UTF-8')
+                            'lspools']).decode('US-ASCII')
     except CalledProcessError:
         return False
 
@@ -628,7 +629,7 @@ def get_osds(service):
     if version and version >= '0.56':
         return json.loads(check_output(['ceph', '--id', service,
                                         'osd', 'ls',
-                                        '--format=json']).decode('UTF-8'))
+                                        '--format=json']).decode('US-ASCII'))
 
     return None
 
@@ -646,7 +647,7 @@ def rbd_exists(service, pool, rbd_img):
     """Check to see if a RADOS block device exists."""
     try:
         out = check_output(['rbd', 'list', '--id',
-                            service, '--pool', pool]).decode('UTF-8')
+                            service, '--pool', pool]).decode('US-ASCII')
     except CalledProcessError:
         return False
 
@@ -771,7 +772,7 @@ def configure(service, key, auth, use_syslog):
 def image_mapped(name):
     """Determine whether a RADOS block device is mapped locally."""
     try:
-        out = check_output(['rbd', 'showmapped']).decode('UTF-8')
+        out = check_output(['rbd', 'showmapped']).decode('US-ASCII')
     except CalledProcessError:
         return False
 
