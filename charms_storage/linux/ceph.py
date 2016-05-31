@@ -1248,6 +1248,13 @@ class CephConfContext(object):
         return ceph_conf
 
 
+class OSContextError(Exception):
+    """Raised when an error occurs during context generation.
+    This exception is principally used in contrib.openstack.context
+    """
+    pass
+
+
 def config_flags_parser(config_flags):
     """Parses config flags string into dict.
 
