@@ -1,1 +1,17 @@
 .DS_Store
+*.pyc
+__pycache__/
+dist/
+build/
+MANIFEST
+charmhelpers/version.py
+.coverage
+.env/
+coverage.xml
+docs/_build
+.idea
+.project
+.pydevproject
+.settings
+.venv
+.venv3

@@ -64,6 +64,8 @@ from charmhelpers.fetch import (
     apt_install,
 )
 
+import yaml
+
 from charmhelpers.core.kernel import modprobe
 # from charmhelpers.contrib.openstack.utils import config_flags_parser
 
@@ -284,7 +286,7 @@ def get_mon_map(service):
     try:
         mon_status = check_output(
             ['ceph', '--id', service,
-             'mon_status', '--format=json']).decode("utf-8") 
+             'mon_status', '--format=json']).decode("utf-8")
         try:
             return json.loads(mon_status)
         except ValueError as v:
@@ -411,7 +413,7 @@ def get_erasure_profile(service, name):
     try:
         out = check_output(['ceph', '--id', service,
                             'osd', 'erasure-code-profile', 'get',
-                            name, '--format=json']).decode("utf-8") 
+                            name, '--format=json']).decode("utf-8")
         return json.loads(out)
     except (CalledProcessError, OSError, ValueError):
         return None
@@ -599,7 +601,7 @@ def get_cache_mode(service, pool_name):
     validator(value=service, valid_type=six.string_types)
     validator(value=pool_name, valid_type=six.string_types)
     out = check_output(['ceph', '--id', service, 'osd', 'dump', '--format=json']) \
-              .decode("utf-8")
+        .decode("utf-8")
     try:
         osd_json = json.loads(out)
         for pool in osd_json['pools']:
@@ -1297,8 +1299,8 @@ def config_flags_parser(config_flags):
             return yaml.safe_load(config_flags)
 
     if config_flags.find('==') >= 0:
-        juju_log("config_flags is not in expected format (key=value)",
-                 level=ERROR)
+        log("config_flags is not in expected format (key=value)",
+            level=ERROR)
         raise OSContextError
 
     # strip the following from each value.
@@ -1323,8 +1325,8 @@ def config_flags_parser(config_flags):
             # if this not the first entry, expect an embedded key.
             index = current.rfind(',')
             if index < 0:
-                juju_log("Invalid config value(s) at index %s" % (i),
-                         level=ERROR)
+                log("Invalid config value(s) at index %s" % (i),
+                    level=ERROR)
                 raise OSContextError
             key = current[index + 1:]
 
