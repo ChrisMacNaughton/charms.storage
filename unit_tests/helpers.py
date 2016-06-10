@@ -71,6 +71,7 @@ class FakeRelation(object):
         self.relation_get.side_affect = relation.get
         passwd = self.relation_get('password', rid='mysql:0', unit='mysql/0')
     '''
+
     def __init__(self, relation_data):
         self.relation_data = relation_data
 
@@ -89,7 +90,7 @@ class FakeRelation(object):
             except KeyError:
                 return None
             if attribute and attribute in relation:
-                    return relation[attribute]
+                return relation[attribute]
             return relation
 
     def relation_ids(self, relation=None):

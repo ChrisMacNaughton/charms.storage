@@ -112,9 +112,12 @@ CEPH_CLIENT_RELATION = {
     'ceph:8': {
         'ceph/0': {
             'auth': 'cephx',
-            'broker-rsp-glance-0': '{"request-id": "0bc7dc54", "exit-code": 0}',
-            'broker-rsp-glance-1': '{"request-id": "0880e22a", "exit-code": 0}',
-            'broker-rsp-glance-2': '{"request-id": "0da543b8", "exit-code": 0}',
+            'broker-rsp-glance-0':
+                '{"request-id": "0bc7dc54", "exit-code": 0}',
+            'broker-rsp-glance-1':
+                '{"request-id": "0880e22a", "exit-code": 0}',
+            'broker-rsp-glance-2':
+                '{"request-id": "0da543b8", "exit-code": 0}',
             'broker_rsp': '{"request-id": "0da543b8", "exit-code": 0}',
             'ceph-public-address': '10.5.44.103',
             'key': 'AQCLDttVuHXINhAAvI144CB09dYchhHyTUY9BQ==',
@@ -133,7 +136,8 @@ CEPH_CLIENT_RELATION = {
             'private-address': '10.5.44.105',
         },
         'glance/0': {
-            'broker_req': '{"api-version": 1, "request-id": "0bc7dc54", "ops": [{"replicas": 3, "name": "glance", "op": "create-pool"}]}',
+            'broker_req': """{"api-version": 1, "request-id": "0bc7dc54", "ops": [
+    {"replicas": 3, "name": "glance", "op": "create-pool"}]}""",
             'private-address': '10.5.44.109',
         },
     }
@@ -150,6 +154,7 @@ CEPH_CLIENT_RELATION_LEGACY['ceph:8']['ceph/0'] = {
 
 
 class CephUtilsTests(TestCase):
+
     def setUp(self):
         super(CephUtilsTests, self).setUp()
         [self._patch(m) for m in [
@@ -197,10 +202,14 @@ class CephUtilsTests(TestCase):
         p = ceph_utils.Pool(name='test', service='admin')
         p.add_cache_tier('cacher', 'readonly')
         self.check_call.assert_has_calls([
-            call(['ceph', '--id', 'admin', 'osd', 'tier', 'add', 'test', 'cacher']),
-            call(['ceph', '--id', 'admin', 'osd', 'tier', 'cache-mode', 'cacher', 'readonly']),
-            call(['ceph', '--id', 'admin', 'osd', 'tier', 'set-overlay', 'test', 'cacher']),
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'set', 'cacher', 'hit_set_type', 'bloom']),
+            call(['ceph', '--id', 'admin', 'osd', 'tier',
+                  'add', 'test', 'cacher']),
+            call(['ceph', '--id', 'admin', 'osd', 'tier',
+                  'cache-mode', 'cacher', 'readonly']),
+            call(['ceph', '--id', 'admin', 'osd', 'tier',
+                  'set-overlay', 'test', 'cacher']),
+            call(['ceph', '--id', 'admin', 'osd', 'pool',
+                  'set', 'cacher', 'hit_set_type', 'bloom']),
         ])
 
     @patch.object(ceph_utils, 'get_cache_mode')
@@ -210,8 +219,10 @@ class CephUtilsTests(TestCase):
         p = ceph_utils.Pool(name='test', service='admin')
         p.remove_cache_tier(cache_pool='cacher')
         self.check_call.assert_has_calls([
-            call(['ceph', '--id', 'admin', 'osd', 'tier', 'cache-mode', 'cacher', 'none']),
-            call(['ceph', '--id', 'admin', 'osd', 'tier', 'remove', 'test', 'cacher']),
+            call(['ceph', '--id', 'admin', 'osd', 'tier',
+                  'cache-mode', 'cacher', 'none']),
+            call(['ceph', '--id', 'admin', 'osd', 'tier',
+                  'remove', 'test', 'cacher']),
         ])
 
     @patch.object(ceph_utils, 'get_cache_mode')
@@ -223,11 +234,14 @@ class CephUtilsTests(TestCase):
         p = ceph_utils.Pool(name='test', service='admin')
         p.remove_cache_tier(cache_pool='cacher')
         self.check_call.assert_has_calls([
-            call(['ceph', '--id', 'admin', 'osd', 'tier', 'cache-mode', 'cacher', 'forward',
-                  '--yes-i-really-mean-it']),
-            call(['rados', '--id', 'admin', '-p', 'cacher', 'cache-flush-evict-all']),
-            call(['ceph', '--id', 'admin', 'osd', 'tier', 'remove-overlay', 'test']),
-            call(['ceph', '--id', 'admin', 'osd', 'tier', 'remove', 'test', 'cacher']),
+            call(['ceph', '--id', 'admin', 'osd', 'tier', 'cache-mode',
+                  'cacher', 'forward', '--yes-i-really-mean-it']),
+            call(['rados', '--id', 'admin', '-p', 'cacher',
+                  'cache-flush-evict-all']),
+            call(['ceph', '--id', 'admin', 'osd', 'tier',
+                  'remove-overlay', 'test']),
+            call(['ceph', '--id', 'admin', 'osd', 'tier',
+                  'remove', 'test', 'cacher']),
         ])
 
     @patch.object(ceph_utils, 'get_osds')
@@ -237,8 +251,10 @@ class CephUtilsTests(TestCase):
         p.create()
 
         self.check_call.assert_has_calls([
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'create', 'test', str(200)]),
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'set', 'test', 'size', str(3)])
+            call(['ceph', '--id', 'admin', 'osd', 'pool',
+                  'create', 'test', str(200)]),
+            call(['ceph', '--id', 'admin', 'osd', 'pool',
+                  'set', 'test', 'size', str(3)])
         ])
 
     @patch.object(ceph_utils, 'get_osds')
@@ -248,7 +264,8 @@ class CephUtilsTests(TestCase):
         p.create()
 
         self.check_call.assert_has_calls([
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'create', 'test', str(128)]),
+            call(['ceph', '--id', 'admin', 'osd', 'pool',
+                  'create', 'test', str(128)]),
         ])
 
     @patch.object(ceph_utils, 'get_osds')
@@ -258,7 +275,8 @@ class CephUtilsTests(TestCase):
         p.create()
 
         self.check_call.assert_has_calls([
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'create', 'test', str(512)]),
+            call(['ceph', '--id', 'admin', 'osd', 'pool',
+                  'create', 'test', str(512)]),
         ])
 
     @patch.object(ceph_utils, 'get_osds')
@@ -268,7 +286,8 @@ class CephUtilsTests(TestCase):
         p.create()
 
         self.check_call.assert_has_calls([
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'create', 'test', str(4096)]),
+            call(['ceph', '--id', 'admin', 'osd', 'pool',
+                  'create', 'test', str(4096)]),
         ])
 
     @patch.object(ceph_utils, 'get_osds')
@@ -278,12 +297,13 @@ class CephUtilsTests(TestCase):
         p.create()
 
         self.check_call.assert_has_calls([
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'create', 'test', str(65536)]),
+            call(['ceph', '--id', 'admin', 'osd', 'pool',
+                  'create', 'test', str(65536)]),
         ])
 
     def test_replicated_pool_create_failed(self):
-        self.check_call.side_effect = CalledProcessError(returncode=1, cmd='mock',
-                                                         output=None)
+        self.check_call.side_effect = CalledProcessError(
+            returncode=1, cmd='mock', output=None)
         p = ceph_utils.ReplicatedPool(name='test', service='admin', replicas=3)
         self.assertRaises(CalledProcessError, p.create)
 
@@ -295,9 +315,12 @@ class CephUtilsTests(TestCase):
         self.check_call.assert_has_calls([])
 
     def test_erasure_pool_create_failed(self):
-        self.check_output.side_effect = CalledProcessError(returncode=1, cmd='ceph',
-                                                           output=None)
-        p = ceph_utils.ErasurePool(name='test', service='admin', erasure_code_profile='foo')
+        self.check_output.side_effect = CalledProcessError(
+            returncode=1, cmd='ceph', output=None)
+        p = ceph_utils.ErasurePool(
+            name='test',
+            service='admin',
+            erasure_code_profile='foo')
         self.assertRaises(ceph_utils.PoolCreationError, p.create)
 
     @patch.object(ceph_utils, 'get_erasure_profile')
@@ -313,7 +336,8 @@ class CephUtilsTests(TestCase):
         p = ceph_utils.ErasurePool(name='test', service='admin')
         p.create()
         self.check_call.assert_has_calls(
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'create', 'test', str(8192),
+            call(['ceph', '--id', 'admin', 'osd', 'pool',
+                  'create', 'test', str(8192),
                   str(8192), 'erasure', 'default'])
         )
 
@@ -324,93 +348,180 @@ class CephUtilsTests(TestCase):
 
     def test_pool_set(self):
         self.check_call.return_value = 0
-        ceph_utils.pool_set(service='admin', pool_name='data', key='test', value=2)
+        ceph_utils.pool_set(
+            service='admin',
+            pool_name='data',
+            key='test',
+            value=2)
         self.check_call.assert_has_calls(
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'set', 'data', 'test', 2])
+            call(['ceph', '--id', 'admin', 'osd', 'pool',
+                  'set', 'data', 'test', 2])
         )
 
     def test_pool_set_fails(self):
-        self.check_call.side_effect = CalledProcessError(returncode=1, cmd='mock',
-                                                         output=None)
-        self.assertRaises(CalledProcessError, ceph_utils.pool_set,
-                          service='admin', pool_name='data', key='test', value=2)
+        self.check_call.side_effect = CalledProcessError(
+            returncode=1, cmd='mock', output=None)
+        self.assertRaises(
+            CalledProcessError,
+            ceph_utils.pool_set,
+            service='admin',
+            pool_name='data',
+            key='test',
+            value=2)
 
     def test_snapshot_pool(self):
         self.check_call.return_value = 0
-        ceph_utils.snapshot_pool(service='admin', pool_name='data', snapshot_name='test-snap-1')
+        ceph_utils.snapshot_pool(
+            service='admin',
+            pool_name='data',
+            snapshot_name='test-snap-1')
         self.check_call.assert_has_calls(
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'mksnap', 'data', 'test-snap-1'])
+            call(['ceph', '--id', 'admin', 'osd', 'pool',
+                  'mksnap', 'data', 'test-snap-1'])
         )
 
     def test_snapshot_pool_fails(self):
-        self.check_call.side_effect = CalledProcessError(returncode=1, cmd='mock',
-                                                         output=None)
-        self.assertRaises(CalledProcessError, ceph_utils.snapshot_pool,
-                          service='admin', pool_name='data', snapshot_name='test-snap-1')
+        self.check_call.side_effect = CalledProcessError(
+            returncode=1, cmd='mock', output=None)
+        self.assertRaises(
+            CalledProcessError,
+            ceph_utils.snapshot_pool,
+            service='admin',
+            pool_name='data',
+            snapshot_name='test-snap-1')
 
     def test_remove_pool_snapshot(self):
         self.check_call.return_value = 0
-        ceph_utils.remove_pool_snapshot(service='admin', pool_name='data', snapshot_name='test-snap-1')
+        ceph_utils.remove_pool_snapshot(
+            service='admin',
+            pool_name='data',
+            snapshot_name='test-snap-1')
         self.check_call.assert_has_calls(
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'rmsnap', 'data', 'test-snap-1'])
+            call(['ceph', '--id', 'admin', 'osd', 'pool',
+                  'rmsnap', 'data', 'test-snap-1'])
         )
 
     def test_set_pool_quota(self):
         self.check_call.return_value = 0
-        ceph_utils.set_pool_quota(service='admin', pool_name='data', max_bytes=1024)
-        self.check_call.assert_has_calls(
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'set-quota', 'data', 'max_bytes', '1024'])
-        )
+        ceph_utils.set_pool_quota(
+            service='admin',
+            pool_name='data',
+            max_bytes=1024)
+        self.check_call.assert_has_calls(call(
+            ['ceph', '--id', 'admin', 'osd', 'pool',
+             'set-quota', 'data', 'max_bytes', '1024']))
 
     def test_remove_pool_quota(self):
         self.check_call.return_value = 0
         ceph_utils.remove_pool_quota(service='admin', pool_name='data')
-        self.check_call.assert_has_calls(
-            call(['ceph', '--id', 'admin', 'osd', 'pool', 'set-quota', 'data', 'max_bytes', '0'])
-        )
+        self.check_call.assert_has_calls(call(
+            ['ceph', '--id', 'admin', 'osd', 'pool',
+             'set-quota', 'data', 'max_bytes', '0']))
 
     @patch.object(ceph_utils, 'erasure_profile_exists')
     def test_create_erasure_profile(self, existing_profile):
         existing_profile.return_value = True
-        ceph_utils.create_erasure_profile(service='admin', profile_name='super-profile', erasure_plugin_name='jerasure',
-                                          failure_domain='rack', data_chunks=10, coding_chunks=3)
+        ceph_utils.create_erasure_profile(
+            service='admin',
+            profile_name='super-profile',
+            erasure_plugin_name='jerasure',
+            failure_domain='rack',
+            data_chunks=10,
+            coding_chunks=3)
 
-        cmd = ['ceph', '--id', 'admin', 'osd', 'erasure-code-profile', 'set', 'super-profile',
-               'plugin=' + 'jerasure', 'k=' + str(10), 'm=' + str(3),
-               'ruleset_failure_domain=' + 'rack', '--force']
+        cmd = [
+            'ceph',
+            '--id',
+            'admin',
+            'osd',
+            'erasure-code-profile',
+            'set',
+            'super-profile',
+            'plugin=' +
+            'jerasure',
+            'k=' +
+            str(10),
+            'm=' +
+            str(3),
+            'ruleset_failure_domain=' +
+            'rack',
+            '--force']
         self.check_call.assert_has_calls(call(cmd))
 
     @patch.object(ceph_utils, 'erasure_profile_exists')
     def test_create_erasure_profile_local(self, existing_profile):
         existing_profile.return_value = False
-        ceph_utils.create_erasure_profile(service='admin', profile_name='super-profile', erasure_plugin_name='local',
-                                          failure_domain='rack', data_chunks=10, coding_chunks=3, locality=1)
+        ceph_utils.create_erasure_profile(
+            service='admin',
+            profile_name='super-profile',
+            erasure_plugin_name='local',
+            failure_domain='rack',
+            data_chunks=10,
+            coding_chunks=3,
+            locality=1)
 
-        cmd = ['ceph', '--id', 'admin', 'osd', 'erasure-code-profile', 'set', 'super-profile',
-               'plugin=' + 'local', 'k=' + str(10), 'm=' + str(3),
-               'ruleset_failure_domain=' + 'rack', 'l=' + str(1)]
+        cmd = [
+            'ceph',
+            '--id',
+            'admin',
+            'osd',
+            'erasure-code-profile',
+            'set',
+            'super-profile',
+            'plugin=' + 'local',
+            'k=' + str(10),
+            'm=' + str(3),
+            'ruleset_failure_domain=' + 'rack',
+            'l=' + str(1)]
         self.check_call.assert_has_calls(call(cmd))
 
     @patch.object(ceph_utils, 'erasure_profile_exists')
     def test_create_erasure_profile_shec(self, existing_profile):
         existing_profile.return_value = False
-        ceph_utils.create_erasure_profile(service='admin', profile_name='super-profile', erasure_plugin_name='shec',
-                                          failure_domain='rack', data_chunks=10, coding_chunks=3,
-                                          durability_estimator=1)
+        ceph_utils.create_erasure_profile(
+            service='admin',
+            profile_name='super-profile',
+            erasure_plugin_name='shec',
+            failure_domain='rack',
+            data_chunks=10,
+            coding_chunks=3,
+            durability_estimator=1)
 
-        cmd = ['ceph', '--id', 'admin', 'osd', 'erasure-code-profile', 'set', 'super-profile',
-               'plugin=' + 'shec', 'k=' + str(10), 'm=' + str(3),
-               'ruleset_failure_domain=' + 'rack', 'c=' + str(1)]
+        cmd = [
+            'ceph',
+            '--id',
+            'admin',
+            'osd',
+            'erasure-code-profile',
+            'set',
+            'super-profile',
+            'plugin=' + 'shec',
+            'k=' + str(10),
+            'm=' + str(3),
+            'ruleset_failure_domain=' + 'rack',
+            'c=' + str(1)]
         self.check_call.assert_has_calls(call(cmd))
 
     def test_rename_pool(self):
-        ceph_utils.rename_pool(service='admin', old_name='old-pool', new_name='new-pool')
-        cmd = ['ceph', '--id', 'admin', 'osd', 'pool', 'rename', 'old-pool', 'new-pool']
+        ceph_utils.rename_pool(
+            service='admin',
+            old_name='old-pool',
+            new_name='new-pool')
+        cmd = [
+            'ceph',
+            '--id',
+            'admin',
+            'osd',
+            'pool',
+            'rename',
+            'old-pool',
+            'new-pool']
         self.check_call.assert_called_with(cmd)
 
     def test_erasure_profile_exists(self):
         self.check_call.return_value = 0
-        profile_exists = ceph_utils.erasure_profile_exists(service='admin', name='super-profile')
+        profile_exists = ceph_utils.erasure_profile_exists(
+            service='admin', name='super-profile')
         cmd = ['ceph', '--id', 'admin',
                'osd', 'erasure-code-profile', 'get',
                'super-profile']
@@ -484,7 +595,8 @@ class CephUtilsTests(TestCase):
 
     def test_get_cache_mode(self):
         self.check_output.return_value = OSD_DUMP
-        cache_mode = ceph_utils.get_cache_mode(service='admin', pool_name='rbd')
+        cache_mode = ceph_utils.get_cache_mode(
+            service='admin', pool_name='rbd')
         self.assertEqual("writeback", cache_mode)
 
     @patch('os.path.exists')
@@ -1014,8 +1126,12 @@ class CephUtilsTests(TestCase):
         for key in ['api-version', 'request-id']:
             self.assertEqual(request_dict[key], expected[key])
         for key in ['op', 'name', 'replicas']:
-            self.assertEqual(request_dict['ops'][0][key], expected['ops'][0][key])
-            self.assertEqual(request_dict['ops'][1][key], expected['ops'][1][key])
+            self.assertEqual(
+                request_dict['ops'][0][key],
+                expected['ops'][0][key])
+            self.assertEqual(
+                request_dict['ops'][1][key],
+                expected['ops'][1][key])
 
     def test_ceph_broker_rsp_class(self):
         rsp = ceph_utils.CephBrokerRsp(json.dumps({'exit-code': 0,
@@ -1075,7 +1191,9 @@ class CephUtilsTests(TestCase):
     def test_get_request_states_failedrq(self, mlocal_unit):
         mlocal_unit.return_value = 'glance/0'
         rel = copy.deepcopy(CEPH_CLIENT_RELATION)
-        rel['ceph:8']['ceph/0']['broker-rsp-glance-0'] = '{"request-id": "0bc7dc54", "exit-code": 1}'
+        rel['ceph:8'][
+            'ceph/0']['broker-rsp-glance-0'] = \
+            '{"request-id": "0bc7dc54", "exit-code": 1}'
         self.setup_client_relation(rel)
         rq = ceph_utils.CephBrokerRq()
         rq.add_op_create_pool(name='glance', replica_count=3)
@@ -1243,7 +1361,9 @@ class CephUtilsTests(TestCase):
         req.add_op_create_pool(name='glance', replica_count=4)
         mlocal_unit.return_value = 'glance/0'
         rel = copy.deepcopy(CEPH_CLIENT_RELATION)
-        rel['ceph:8']['ceph/0']['broker-rsp-glance-0'] = '{"request-id": "0bc7dc54", "exit-code": 1}'
+        rel['ceph:8'][
+            'ceph/0']['broker-rsp-glance-0'] = \
+            '{"request-id": "0bc7dc54", "exit-code": 1}'
         self.setup_client_relation(rel)
         self.assertFalse(ceph_utils.is_request_complete_for_rid(req, 'ceph:8'))
 
@@ -1272,7 +1392,9 @@ class CephUtilsTests(TestCase):
     @patch.object(ceph_utils, 'local_unit')
     def test_get_broker_rsp_key(self, mlocal_unit):
         mlocal_unit.return_value = 'glance/0'
-        self.assertEqual(ceph_utils.get_broker_rsp_key(), 'broker-rsp-glance-0')
+        self.assertEqual(
+            ceph_utils.get_broker_rsp_key(),
+            'broker-rsp-glance-0')
 
     @patch.object(ceph_utils, 'local_unit')
     def test_send_request_if_needed(self, mlocal_unit):
@@ -1292,7 +1414,8 @@ class CephUtilsTests(TestCase):
         rq = ceph_utils.CephBrokerRq()
         rq.add_op_create_pool(name='glance', replica_count=4)
         ceph_utils.send_request_if_needed(rq)
-        actual = json.loads(self.relation_set.call_args_list[0][1]['broker_req'])
+        actual = json.loads(
+            self.relation_set.call_args_list[0][1]['broker_req'])
         self.assertEqual(actual['api-version'], 1)
         self.assertEqual(actual['request-id'], 'de67511e')
         self.assertEqual(actual['ops'][0]['replicas'], 4)

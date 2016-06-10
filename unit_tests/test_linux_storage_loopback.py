@@ -15,6 +15,7 @@ STORAGE_LINUX_LOOPBACK = 'charms_storage.linux.loopback'
 
 
 class LoopbackStorageUtilsTests(unittest.TestCase):
+
     @patch(STORAGE_LINUX_LOOPBACK + '.check_output')
     def test_loopback_devices(self, output):
         """It translates current loopback mapping to a dict"""

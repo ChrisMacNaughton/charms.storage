@@ -81,12 +81,24 @@ err to syslog = {use_syslog}
 clog to syslog = {use_syslog}
 """
 # For 50 < osds < 240,000 OSDs (Roughly 1 Exabyte at 6T OSDs)
-powers_of_two = [8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608]
+powers_of_two = [
+    8192,
+    16384,
+    32768,
+    65536,
+    131072,
+    262144,
+    524288,
+    1048576,
+    2097152,
+    4194304,
+    8388608]
 
 
 def validator(value, valid_type, valid_range=None):
     """
-    Used to validate these: http://docs.ceph.com/docs/master/rados/operations/pools/#set-pool-values
+    Used to validate these:
+        http://docs.ceph.com/docs/master/rados/operations/pools/#set-pool-values
     Example input:
         validator(value=1,
                   valid_type=int,
@@ -124,7 +136,8 @@ def validator(value, valid_type, valid_range=None):
 
 class PoolCreationError(Exception):
     """
-    A custom error to inform the caller that a pool creation failed.  Provides an error message
+    A custom error to inform the caller that a pool creation failed.
+        Provides an error message
     """
 
     def __init__(self, message):
@@ -133,8 +146,10 @@ class PoolCreationError(Exception):
 
 class Pool(object):
     """
-    An object oriented approach to Ceph pool creation. This base class is inherited by ReplicatedPool and ErasurePool.
-    Do not call create() on this base class as it will not do anything.  Instantiate a child class and call create().
+    An object oriented approach to Ceph pool creation. This base class is
+        inherited by ReplicatedPool and ErasurePool.
+    Do not call create() on this base class as it will not do anything.
+        Instantiate a child class and call create().
     """
 
     def __init__(self, service, name):
@@ -150,30 +165,44 @@ class Pool(object):
         """
         Adds a new cache tier to an existing pool.
         :param cache_pool: six.string_types.  The cache tier pool name to add.
-        :param mode: six.string_types. The caching mode to use for this pool.  valid range = ["readonly", "writeback"]
+        :param mode: six.string_types. The caching mode to use for this pool.
+            valid range = ["readonly", "writeback"]
         :return: None
         """
         # Check the input types and values
         validator(value=cache_pool, valid_type=six.string_types)
-        validator(value=mode, valid_type=six.string_types, valid_range=["readonly", "writeback"])
+        validator(
+            value=mode,
+            valid_type=six.string_types,
+            valid_range=[
+                "readonly",
+                "writeback"])
 
-        check_call(['ceph', '--id', self.service, 'osd', 'tier', 'add', self.name, cache_pool])
-        check_call(['ceph', '--id', self.service, 'osd', 'tier', 'cache-mode', cache_pool, mode])
-        check_call(['ceph', '--id', self.service, 'osd', 'tier', 'set-overlay', self.name, cache_pool])
-        check_call(['ceph', '--id', self.service, 'osd', 'pool', 'set', cache_pool, 'hit_set_type', 'bloom'])
+        check_call(['ceph', '--id', self.service, 'osd',
+                    'tier', 'add', self.name, cache_pool])
+        check_call(['ceph', '--id', self.service, 'osd',
+                    'tier', 'cache-mode', cache_pool, mode])
+        check_call(['ceph', '--id', self.service, 'osd', 'tier',
+                    'set-overlay', self.name, cache_pool])
+        check_call(['ceph', '--id', self.service, 'osd', 'pool',
+                    'set', cache_pool, 'hit_set_type', 'bloom'])
 
     def remove_cache_tier(self, cache_pool):
         """
-        Removes a cache tier from Ceph.  Flushes all dirty objects from writeback pools and waits for that to complete.
-        :param cache_pool: six.string_types.  The cache tier pool name to remove.
+        Removes a cache tier from Ceph.  Flushes all dirty objects from
+            writeback pools and waits for that to complete.
+        :param cache_pool: six.string_types.  The cache tier pool name
+            to remove.
         :return: None
         """
         # read-only is easy, writeback is much harder
         mode = get_cache_mode(self.service, cache_pool)
         version = ceph_version()
         if mode == 'readonly':
-            check_call(['ceph', '--id', self.service, 'osd', 'tier', 'cache-mode', cache_pool, 'none'])
-            check_call(['ceph', '--id', self.service, 'osd', 'tier', 'remove', self.name, cache_pool])
+            check_call(['ceph', '--id', self.service, 'osd',
+                        'tier', 'cache-mode', cache_pool, 'none'])
+            check_call(['ceph', '--id', self.service, 'osd',
+                        'tier', 'remove', self.name, cache_pool])
 
         elif mode == 'writeback':
             pool_forward_cmd = ['ceph', '--id', self.service, 'osd', 'tier',
@@ -184,14 +213,17 @@ class Pool(object):
 
             check_call(pool_forward_cmd)
             # Flush the cache and wait for it to return
-            check_call(['rados', '--id', self.service, '-p', cache_pool, 'cache-flush-evict-all'])
-            check_call(['ceph', '--id', self.service, 'osd', 'tier', 'remove-overlay', self.name])
-            check_call(['ceph', '--id', self.service, 'osd', 'tier', 'remove', self.name, cache_pool])
+            check_call(['rados', '--id', self.service, '-p',
+                        cache_pool, 'cache-flush-evict-all'])
+            check_call(['ceph', '--id', self.service, 'osd',
+                        'tier', 'remove-overlay', self.name])
+            check_call(['ceph', '--id', self.service, 'osd',
+                        'tier', 'remove', self.name, cache_pool])
 
     def get_pgs(self, pool_size):
         """
-        :param pool_size: int. pool_size is either the number of replicas for replicated pools or the K+M sum for
-            erasure coded pools
+        :param pool_size: int. pool_size is either the number of replicas for
+            replicated pools or the K+M sum for erasure coded pools
         :return: int.  The number of pgs to use.
         """
         validator(value=pool_size, valid_type=int)
@@ -217,6 +249,7 @@ class Pool(object):
 
 
 class ReplicatedPool(Pool):
+
     def __init__(self, service, name, pg_num=None, replicas=2):
         super(ReplicatedPool, self).__init__(service=service, name=name)
         self.replicas = replicas
@@ -242,31 +275,50 @@ class ReplicatedPool(Pool):
 
 # Default jerasure erasure coded pool
 class ErasurePool(Pool):
+
     def __init__(self, service, name, erasure_code_profile="default"):
         super(ErasurePool, self).__init__(service=service, name=name)
         self.erasure_code_profile = erasure_code_profile
 
     def create(self):
         if not pool_exists(self.service, self.name):
-            # Try to find the erasure profile information so we can properly size the pgs
-            erasure_profile = get_erasure_profile(service=self.service, name=self.erasure_code_profile)
+            # Try to find the erasure profile information so we can properly
+            # size the pgs
+            erasure_profile = get_erasure_profile(
+                service=self.service, name=self.erasure_code_profile)
 
             # Check for errors
             if erasure_profile is None:
-                log(message='Failed to discover erasure_profile named={}'.format(self.erasure_code_profile),
-                    level=ERROR)
-                raise PoolCreationError(message='unable to find erasure profile {}'.format(self.erasure_code_profile))
+                log(message='Failed to discover erasure'
+                    'profile named={}'.format(
+                            self.erasure_code_profile), level=ERROR)
+                raise PoolCreationError(
+                    message='unable to find erasure profile {}'.format(
+                        self.erasure_code_profile))
             if 'k' not in erasure_profile or 'm' not in erasure_profile:
                 # Error
-                log(message='Unable to find k (data chunks) or m (coding chunks) in {}'.format(erasure_profile),
-                    level=ERROR)
+                log(message='Unable to find k (data chunks) or m' +
+                    '(coding chunks) in {}'.format(
+                        erasure_profile), level=ERROR)
                 raise PoolCreationError(
-                    message='unable to find k (data chunks) or m (coding chunks) in {}'.format(erasure_profile))
+                    message='unable to find k (data chunks) or m' +
+                    '(coding chunks) in {}'.format(erasure_profile))
 
-            pgs = self.get_pgs(int(erasure_profile['k']) + int(erasure_profile['m']))
+            pgs = self.get_pgs(
+                int(erasure_profile['k']) + int(erasure_profile['m']))
             # Create it
-            cmd = ['ceph', '--id', self.service, 'osd', 'pool', 'create', self.name, str(pgs), str(pgs),
-                   'erasure', self.erasure_code_profile]
+            cmd = [
+                'ceph',
+                '--id',
+                self.service,
+                'osd',
+                'pool',
+                'create',
+                self.name,
+                str(pgs),
+                str(pgs),
+                'erasure',
+                self.erasure_code_profile]
             try:
                 check_call(cmd)
             except CalledProcessError:
@@ -279,7 +331,8 @@ class ErasurePool(Pool):
 def get_mon_map(service):
     """
     Returns the current monitor map.
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :return: json string. :raise: ValueError if the monmap fails to parse.
       Also raises CalledProcessError if our ceph command fails
     """
@@ -305,7 +358,8 @@ def hash_monitor_names(service):
     cluster.
     Hash the name of each monitor.  Return a sorted list of monitor hashes
     in an ascending order.
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :rtype : dict.   json dict of monitor name, ip address and rank
     example: {
         'name': 'ip-172-31-13-165',
@@ -329,7 +383,8 @@ def hash_monitor_names(service):
 def monitor_key_delete(service, key):
     """
     Delete a key and value pair from the monitor cluster
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     Deletes a key value pair on the monitor cluster.
     :param key: six.string_types.  The key to delete.
     """
@@ -346,7 +401,8 @@ def monitor_key_delete(service, key):
 def monitor_key_set(service, key, value):
     """
     Sets a key value pair on the monitor cluster.
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param key: six.string_types.  The key to set.
     :param value: The value to set.  This will be converted to a string
         before setting
@@ -364,7 +420,8 @@ def monitor_key_set(service, key, value):
 def monitor_key_get(service, key):
     """
     Gets the value of an existing key in the monitor cluster.
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param key: six.string_types.  The key to search for.
     :return: Returns the value of that key or None if not found.
     """
@@ -382,7 +439,8 @@ def monitor_key_get(service, key):
 def monitor_key_exists(service, key):
     """
     Searches for the existence of a key in the monitor cluster.
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param key: six.string_types.  The key to search for
     :return: Returns True if the key exists, False if not and raises an
      exception if an unknown error occurs. :raise: CalledProcessError if
@@ -406,7 +464,8 @@ def monitor_key_exists(service, key):
 
 def get_erasure_profile(service, name):
     """
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param name:
     :return:
     """
@@ -422,13 +481,23 @@ def get_erasure_profile(service, name):
 def pool_set(service, pool_name, key, value):
     """
     Sets a value for a RADOS pool in ceph.
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param pool_name: six.string_types
     :param key: six.string_types
     :param value:
     :return: None.  Can raise CalledProcessError
     """
-    cmd = ['ceph', '--id', service, 'osd', 'pool', 'set', pool_name, key, value]
+    cmd = [
+        'ceph',
+        '--id',
+        service,
+        'osd',
+        'pool',
+        'set',
+        pool_name,
+        key,
+        value]
     try:
         check_call(cmd)
     except CalledProcessError:
@@ -438,12 +507,21 @@ def pool_set(service, pool_name, key, value):
 def snapshot_pool(service, pool_name, snapshot_name):
     """
     Snapshots a RADOS pool in ceph.
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param pool_name: six.string_types
     :param snapshot_name: six.string_types
     :return: None.  Can raise CalledProcessError
     """
-    cmd = ['ceph', '--id', service, 'osd', 'pool', 'mksnap', pool_name, snapshot_name]
+    cmd = [
+        'ceph',
+        '--id',
+        service,
+        'osd',
+        'pool',
+        'mksnap',
+        pool_name,
+        snapshot_name]
     try:
         check_call(cmd)
     except CalledProcessError:
@@ -453,12 +531,21 @@ def snapshot_pool(service, pool_name, snapshot_name):
 def remove_pool_snapshot(service, pool_name, snapshot_name):
     """
     Remove a snapshot from a RADOS pool in ceph.
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param pool_name: six.string_types
     :param snapshot_name: six.string_types
     :return: None.  Can raise CalledProcessError
     """
-    cmd = ['ceph', '--id', service, 'osd', 'pool', 'rmsnap', pool_name, snapshot_name]
+    cmd = [
+        'ceph',
+        '--id',
+        service,
+        'osd',
+        'pool',
+        'rmsnap',
+        pool_name,
+        snapshot_name]
     try:
         check_call(cmd)
     except CalledProcessError:
@@ -468,7 +555,8 @@ def remove_pool_snapshot(service, pool_name, snapshot_name):
 # max_bytes should be an int or long
 def set_pool_quota(service, pool_name, max_bytes):
     """
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param pool_name: six.string_types
     :param max_bytes: int or long
     :return: None.  Can raise CalledProcessError
@@ -485,11 +573,21 @@ def set_pool_quota(service, pool_name, max_bytes):
 def remove_pool_quota(service, pool_name):
     """
     Set a byte quota on a RADOS pool in ceph.
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param pool_name: six.string_types
     :return: None.  Can raise CalledProcessError
     """
-    cmd = ['ceph', '--id', service, 'osd', 'pool', 'set-quota', pool_name, 'max_bytes', '0']
+    cmd = [
+        'ceph',
+        '--id',
+        service,
+        'osd',
+        'pool',
+        'set-quota',
+        pool_name,
+        'max_bytes',
+        '0']
     try:
         check_call(cmd)
     except CalledProcessError:
@@ -498,10 +596,12 @@ def remove_pool_quota(service, pool_name):
 
 def remove_erasure_profile(service, profile_name):
     """
-    Create a new erasure code profile if one does not already exist for it.  Updates
-    the profile if it exists. Please see http://docs.ceph.com/docs/master/rados/operations/erasure-code-profile/
+    Create a new erasure code profile if one does not already exist for it.
+    Updates the profile if it exists. Please see
+        http://docs.ceph.com/docs/master/rados/operations/erasure-code-profile/
     for more details
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param profile_name: six.string_types
     :return: None.  Can raise CalledProcessError
     """
@@ -513,18 +613,26 @@ def remove_erasure_profile(service, profile_name):
         raise
 
 
-def create_erasure_profile(service, profile_name, erasure_plugin_name='jerasure',
-                           failure_domain='host',
-                           data_chunks=2, coding_chunks=1,
-                           locality=None, durability_estimator=None):
+def create_erasure_profile(
+        service,
+        profile_name,
+        erasure_plugin_name='jerasure',
+        failure_domain='host',
+        data_chunks=2,
+        coding_chunks=1,
+        locality=None,
+        durability_estimator=None):
     """
-    Create a new erasure code profile if one does not already exist for it.  Updates
-    the profile if it exists. Please see http://docs.ceph.com/docs/master/rados/operations/erasure-code-profile/
+    Create a new erasure code profile if one does not already exist for it.
+    Updates the profile if it exists. Please see
+        http://docs.ceph.com/docs/master/rados/operations/erasure-code-profile/
     for more details
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param profile_name: six.string_types
     :param erasure_plugin_name: six.string_types
-    :param failure_domain: six.string_types.  One of ['chassis', 'datacenter', 'host', 'osd', 'pdu', 'pod', 'rack', 'region',
+    :param failure_domain: six.string_types.  One of ['chassis', 'datacenter',
+        'host', 'osd', 'pdu', 'pod', 'rack', 'region',
         'room', 'root', 'row'])
     :param data_chunks: int
     :param coding_chunks: int
@@ -533,14 +641,40 @@ def create_erasure_profile(service, profile_name, erasure_plugin_name='jerasure'
     :return: None.  Can raise CalledProcessError
     """
     # Ensure this failure_domain is allowed by Ceph
-    validator(failure_domain, six.string_types,
-              ['chassis', 'datacenter', 'host', 'osd', 'pdu', 'pod', 'rack', 'region', 'room', 'root', 'row'])
+    validator(failure_domain,
+              six.string_types,
+              ['chassis',
+               'datacenter',
+               'host',
+               'osd',
+               'pdu',
+               'pod',
+               'rack',
+               'region',
+               'room',
+               'root',
+               'row'])
 
-    cmd = ['ceph', '--id', service, 'osd', 'erasure-code-profile', 'set', profile_name,
-           'plugin=' + erasure_plugin_name, 'k=' + str(data_chunks), 'm=' + str(coding_chunks),
-           'ruleset_failure_domain=' + failure_domain]
+    cmd = [
+        'ceph',
+        '--id',
+        service,
+        'osd',
+        'erasure-code-profile',
+        'set',
+        profile_name,
+        'plugin=' +
+        erasure_plugin_name,
+        'k=' +
+        str(data_chunks),
+        'm=' +
+        str(coding_chunks),
+        'ruleset_failure_domain=' +
+        failure_domain]
     if locality is not None and durability_estimator is not None:
-        raise ValueError("create_erasure_profile should be called with k, m and one of l or c but not both.")
+        raise ValueError(
+            "create_erasure_profile should be called with k,"
+            "m and one of l or c but not both.")
 
     # Add plugin specific information
     if locality is not None:
@@ -562,7 +696,8 @@ def create_erasure_profile(service, profile_name, erasure_plugin_name='jerasure'
 def rename_pool(service, old_name, new_name):
     """
     Rename a Ceph pool from old_name to new_name
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param old_name: six.string_types
     :param new_name: six.string_types
     :return: None
@@ -570,14 +705,23 @@ def rename_pool(service, old_name, new_name):
     validator(value=old_name, valid_type=six.string_types)
     validator(value=new_name, valid_type=six.string_types)
 
-    cmd = ['ceph', '--id', service, 'osd', 'pool', 'rename', old_name, new_name]
+    cmd = [
+        'ceph',
+        '--id',
+        service,
+        'osd',
+        'pool',
+        'rename',
+        old_name,
+        new_name]
     check_call(cmd)
 
 
 def erasure_profile_exists(service, name):
     """
     Check to see if an Erasure code profile already exists.
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param name: six.string_types
     :return: int or None
     """
@@ -594,14 +738,15 @@ def erasure_profile_exists(service, name):
 def get_cache_mode(service, pool_name):
     """
     Find the current caching mode of the pool_name given.
-    :param service: six.string_types. The Ceph user name to run the command under
+    :param service: six.string_types. The Ceph user name to run
+        the command under
     :param pool_name: six.string_types
     :return: int or None
     """
     validator(value=service, valid_type=six.string_types)
     validator(value=pool_name, valid_type=six.string_types)
-    out = check_output(['ceph', '--id', service, 'osd', 'dump', '--format=json']) \
-        .decode("utf-8")
+    out = check_output(['ceph', '--id', service, 'osd',
+                        'dump', '--format=json']) .decode("utf-8")
     try:
         osd_json = json.loads(out)
         for pool in osd_json['pools']:
@@ -1176,7 +1321,8 @@ def is_request_complete_for_rid(request, rid):
             if rdata.get('broker_rsp'):
                 request_data = json.loads(rdata['broker_rsp'])
                 if request_data.get('request-id'):
-                    log('Ignoring legacy broker_rsp without unit key as remote '
+                    log('Ignoring legacy broker_rsp without'
+                        'unit key as remote '
                         'service supports unit specific replies', level=DEBUG)
                 else:
                     log('Using legacy broker_rsp as remote service does not '
@@ -1218,6 +1364,7 @@ class CephConfContext(object):
     dictionary as the value for the config-flags charm option containing
     Ceph configuration settings keyede by their section in ceph.conf.
     """
+
     def __init__(self, permitted_sections=None):
         self.permitted_sections = permitted_sections or []
 
@@ -1227,7 +1374,7 @@ class CephConfContext(object):
             return {}
 
         conf = config_flags_parser(conf)
-        if type(conf) != dict:
+        if not isinstance(conf, dict):
             log("Provided config-flags is not a dictionary - ignoring",
                 level=WARNING)
             return {}

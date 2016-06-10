@@ -38,6 +38,7 @@ STORAGE_LINUX_LVM = 'charms_storage.linux.lvm'
 
 
 class LVMStorageUtilsTests(unittest.TestCase):
+
     def test_find_volume_group_on_pv(self):
         """It determines any volume group assigned to a LVM PV"""
         with patch(STORAGE_LINUX_LVM + '.check_output') as check_output:
