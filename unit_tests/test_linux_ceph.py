@@ -10,7 +10,7 @@ import copy
 
 import charms_storage.linux.ceph as ceph_utils
 from subprocess import CalledProcessError
-from tests.helpers import patch_open, FakeRelation
+from unit_tests.helpers import patch_open, FakeRelation
 import nose.plugins.attrib
 import os
 import time
